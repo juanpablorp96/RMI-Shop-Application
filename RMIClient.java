@@ -9,39 +9,66 @@
  * @author Juan Pablo
  */
 //program for client application 
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.rmi.*; 
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 public class RMIClient 
-{ 
-	public static void main(String args[]) 
-	{ 
-		String answer_items, answer_prices, answer_quantity, value; 
+{
+        private static String bytesToHex(byte[] hash) {
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if(hex.length() == 1) hexString.append('0');
+                    hexString.append(hex);
+            }
+            return hexString.toString();
+        }
+	public static void main(String args[]) throws NotBoundException, MalformedURLException, RemoteException 
+	{
+            RMIInterface access = (RMIInterface)Naming.lookup("rmi://localhost:1900" + "/geeksforgeeks");
+            while(true){
+		String[] items, prices, quantity;
+                String value; 
                 Scanner input = new Scanner(System.in);
                 Map<Integer, String> carrito = new HashMap<Integer, String>();
-                String[] items;
-                String[] prices;
-                String[] quantity;
-                System.out.println("1. ver catalogo : ");
+                System.out.println("1. Registrarse : ");
+                System.out.println("2. ver catalogo : ");
 
-                while(true){
+                //while(true){
                 
                 value = input.next();
 		try
 		{ 
-			// lookup method to find reference of remote object 
                     if(value.equals("1")){
-			RMIInterface access = 
-				(RMIInterface)Naming.lookup("rmi://localhost:1900" + "/geeksforgeeks"); 
-			answer_items = access.get_items(value); 
-                        answer_prices = access.get_prices(value);
-                        answer_quantity = access.get_quantity(value);
-                        System.out.println("Numero     Item        Precios        Disponibles");
-                        items = answer_items.split(",");
-                        prices = answer_prices.split(",");
-                        quantity = answer_quantity.split(",");
+                        Boolean answer;
+                        String username, password, card, money, hash;
+                        System.out.println("Ingrese un nombre de usuario : ");
+                        username = input.next();
+                        System.out.println("Ingrese una contraseña : ");
+                        password = input.next();
+                        System.out.println("Ingrese numero de tarjeta : ");
+                        card = input.next();
+                        System.out.println("Ingrese la cantidad de dinero que hay en la tarjeta : ");
+                        money = input.next();
+                        
+                        // hasheo de la contraseña
+                        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                        byte[] encodedhash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+                        hash = bytesToHex(encodedhash);
+                        
+                        answer = access.register(username, hash, card, money);
+                        System.out.println(answer);
+                    }
+                    if(value.equals("2")){ 
+			items = access.get_items(value); 
+                        prices = access.get_prices(value);
+                        quantity = access.get_quantity(value);
+                        System.out.println("Numero     Item        Precio        Disponibles");
                         int i = items.length;
                         for(int k = 0;k<i;k++)
                         {
@@ -73,13 +100,13 @@ public class RMIClient
                         // Imprimir map
                         System.out.println("Su carrito de compras es:");
                         Iterator it = carrito.keySet().iterator();
-                        System.out.println("Numero     Item        Cantidad");
+                        System.out.println("Numero     Item        Precio        Cantidad");
                         while(it.hasNext()){
                           Integer key = (Integer) it.next();
-                          System.out.println(key +"\t  " + items[key - 1] +"\t  " + carrito.get(key));
+                          System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + carrito.get(key));
                         }
                         
-                        System.out.println("¿Desea eliminar un item del carrito? 1. Si  2. No");
+                        System.out.println("¿Desea eliminar un item del carrito? 1. Si, eliminar  2. No, finalizar compra");
                         String delete = input.next();
                         
                         if(delete.equals("1")){
@@ -89,18 +116,31 @@ public class RMIClient
                                 Integer item_del = input.nextInt();
                                 carrito.remove(item_del);
                                 System.out.println("Elemento eliminado del carrito exitosamente");
-                                System.out.println("Desea eliminar otro item? 1. Si  2. No");
+                                System.out.println("Desea eliminar otro item? 1. Si  2. No, finalizar compra");
                                 String continue_del = input.next();
                                 if(continue_del.equals("2")){
                                     delete_next = false;
+                                    delete = "2";
                                 }
                             }
                             System.out.println("Su carrito de compras es:");
                             Iterator it2 = carrito.keySet().iterator();
-                            System.out.println("Numero     Item        Cantidad");
+                            System.out.println("Numero     Item        Precio        Cantidad");
                             while(it2.hasNext()){
                               Integer key = (Integer) it2.next();
-                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + carrito.get(key));
+                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + carrito.get(key));
+                            }
+                        }
+                        Boolean check;
+                        if(delete.equals("2")){
+                            check = access.check_out(carrito);
+                            if(check == true){
+                                System.out.println("Compra realizada exitosamente!");
+                                System.out.println("Ha sido regresado al menu...");
+                            }
+                            else{
+                                System.out.println("Error, ya no hay unidades suficientes");
+                                System.out.println("Ha sido regresado al menu...");
                             }
                         }
                         
@@ -113,7 +153,8 @@ public class RMIClient
 		{ 
 			System.out.println(ae); 
 		} 
-                }
+                //}
+            }
 	} 
 } 
 
