@@ -1,1 +1,6 @@
-potatoes,tomatoes,onions,spanich,cabage,carrat
+potatoes
+tomatoes
+onions
+spanich
+cabage
+carrat

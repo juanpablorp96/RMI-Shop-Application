@@ -28,16 +28,16 @@ public class RMIClient
             }
             return hexString.toString();
         }
-	public static void main(String args[]) throws NotBoundException, MalformedURLException, RemoteException 
-	{
-            RMIInterface access = (RMIInterface)Naming.lookup("rmi://localhost:1900" + "/geeksforgeeks");
+        
+        private static void init(RMIInterface access) throws RemoteException{
+            Map<String, String> cards;
+            cards = access.get_cards();
             while(true){
-		String[] items, prices, quantity;
                 String value; 
                 Scanner input = new Scanner(System.in);
-                Map<Integer, String> carrito = new HashMap<Integer, String>();
+                
                 System.out.println("1. Registrarse : ");
-                System.out.println("2. ver catalogo : ");
+                System.out.println("2. Iniciar sesión : ");
 
                 //while(true){
                 
@@ -46,29 +46,81 @@ public class RMIClient
 		{ 
                     if(value.equals("1")){
                         Boolean answer;
-                        String username, password, card, money, hash;
+                        String username, password, hash;
                         System.out.println("Ingrese un nombre de usuario : ");
                         username = input.next();
                         System.out.println("Ingrese una contraseña : ");
                         password = input.next();
-                        System.out.println("Ingrese numero de tarjeta : ");
-                        card = input.next();
-                        System.out.println("Ingrese la cantidad de dinero que hay en la tarjeta : ");
-                        money = input.next();
+
                         
                         // hasheo de la contraseña
                         MessageDigest digest = MessageDigest.getInstance("SHA-256");
                         byte[] encodedhash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
                         hash = bytesToHex(encodedhash);
                         
-                        answer = access.register(username, hash, card, money);
-                        System.out.println(answer);
+                        answer = access.register(username, hash);
+                        if(answer == true){
+                            System.out.println("Registrado exitosamente");
+                            shopping(access);
+                        }
+                        else{
+                            System.out.println("Error al registrarse");
+                        }
+                        
                     }
-                    if(value.equals("2")){ 
-			items = access.get_items(value); 
-                        prices = access.get_prices(value);
-                        quantity = access.get_quantity(value);
-                        System.out.println("Numero     Item        Precio        Disponibles");
+                    
+                    if(value.equals("2")){
+                        Boolean answer;
+                        String username, password, card, hash;
+                        System.out.println("Ingrese nombre de usuario : ");
+                        username = input.next();
+                        System.out.println("Ingrese contraseña : ");
+                        password = input.next();
+                        System.out.println("Ingrese numero de tarjeta : ");
+                        card = input.next();
+                        
+                        // hasheo de la contraseña
+                        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                        byte[] encodedhash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+                        hash = bytesToHex(encodedhash);
+                        
+                        answer = access.login(username, hash, card);
+                        if(answer == true){
+                            System.out.println("Bienvenido");
+                            shopping(access);
+                        }
+                        if(answer == false){
+                            System.out.println("Error algunos datos no son correctos");
+                        }
+                        
+                    }
+                    
+                    
+                    
+		} 
+		catch(Exception ae) 
+		{ 
+			System.out.println(ae); 
+		} 
+                //}
+            }
+        }
+        private static void shopping(RMIInterface access) throws RemoteException{
+            String[] items, prices, quantity;
+            Map<Integer, String> carrito = new HashMap<Integer, String>();
+            items = access.get_items(); 
+            prices = access.get_prices();
+            quantity = access.get_quantity();
+            Scanner input = new Scanner(System.in);
+            String value;
+            System.out.println("1. Ver catalogo : ");
+
+                //while(true){
+                
+                value = input.next();
+		
+                    if(value.equals("1")){
+            System.out.println("Numero     Item        Precio        Disponibles");
                         int i = items.length;
                         for(int k = 0;k<i;k++)
                         {
@@ -137,24 +189,21 @@ public class RMIClient
                             if(check == true){
                                 System.out.println("Compra realizada exitosamente!");
                                 System.out.println("Ha sido regresado al menu...");
+                                shopping(access);
                             }
                             else{
                                 System.out.println("Error, ya no hay unidades suficientes");
                                 System.out.println("Ha sido regresado al menu...");
+                                shopping(access);
                             }
                         }
-                        
-                        
                     }
-                    
-                    
-		} 
-		catch(Exception ae) 
-		{ 
-			System.out.println(ae); 
-		} 
-                //}
-            }
+            
+        }
+	public static void main(String args[]) throws NotBoundException, MalformedURLException, RemoteException 
+	{
+            RMIInterface access = (RMIInterface)Naming.lookup("rmi://localhost:1900" + "/distribuidos");
+            init(access);
 	} 
 } 
 

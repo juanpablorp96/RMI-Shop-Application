@@ -26,8 +26,8 @@ public class RMIServer
 			LocateRegistry.createRegistry(1900); 
 
 			// Binds the remote object by the name 
-			// geeksforgeeks 
-			Naming.rebind("rmi://localhost:1900" + "/geeksforgeeks",obj); 
+			// distribuidos
+			Naming.rebind("rmi://localhost:1900" + "/distribuidos",obj); 
 		} 
 		catch(Exception ae) 
 		{ 
