@@ -306,7 +306,7 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
         }
         
         @Override
-        public void updateTX(int index){
+        public void commitTX(int index){
             TX.get(index).clear();
         }
 

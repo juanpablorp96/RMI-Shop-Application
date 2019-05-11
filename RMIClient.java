@@ -198,7 +198,7 @@ public class RMIClient
                         Boolean check = false;
                         if(delete.equals("2")){
                             if(access.rollbackValidation(indexTX)){
-                                access.updateTX(indexTX);
+                                access.commitTX(indexTX);
                                 check = access.check_out(carrito);
                                 System.out.println("Validación hacia atras -> TRANSACCION CONSUMADA");
                                 if(check == true){
@@ -211,7 +211,7 @@ public class RMIClient
                                 }
                             }
                             else{
-                                access.updateTX(indexTX);
+                                access.commitTX(indexTX);
                                 System.out.println("Validación hacia atras -> TRANSACCION ABORTADA");
                                 System.out.println("Ha sido regresado al menu...");
                                 shopping(access);
