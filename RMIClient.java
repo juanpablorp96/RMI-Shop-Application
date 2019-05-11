@@ -13,8 +13,10 @@ import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.rmi.*; 
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 public class RMIClient 
@@ -107,10 +109,10 @@ public class RMIClient
         }
         private static void shopping(RMIInterface access) throws RemoteException{
             String[] items, prices, quantity;
+            int indexTX;
             Map<Integer, String> carrito = new HashMap<Integer, String>();
-            items = access.get_items(); 
-            prices = access.get_prices();
-            quantity = access.get_quantity();
+            List<String> TX_i = new ArrayList<String>();
+            String operation;
             Scanner input = new Scanner(System.in);
             String value;
             System.out.println("1. Ver catalogo : ");
@@ -120,7 +122,13 @@ public class RMIClient
                 value = input.next();
 		
                     if(value.equals("1")){
-            System.out.println("Numero     Item        Precio        Disponibles");
+                        indexTX = access.get_indexTX();
+                        access.set_indexTX();
+                        access.create_transaction(indexTX, TX_i);
+                        items = access.get_items();
+                        prices = access.get_prices();
+                        quantity = access.get_quantity();
+                        System.out.println("Numero     Item        Precio        Disponibles");
                         int i = items.length;
                         for(int k = 0;k<i;k++)
                         {
@@ -130,6 +138,10 @@ public class RMIClient
                         while(nextItem){
                             System.out.println("Escoja un item para agregar al carrito de compras...");
                             int item = input.nextInt();
+                            String s_item = Integer.toString(item);
+                            operation = "W," + s_item;
+                            access.add_operation(indexTX, operation);
+                            System.out.println("index->" + indexTX + "operation->" + operation);
                             Boolean addItem = true;
                             while (addItem){
                                 System.out.println("¿Cuantos desea?..."); //valida si hay suficientes disponibles
@@ -155,7 +167,7 @@ public class RMIClient
                         System.out.println("Numero     Item        Precio        Cantidad");
                         while(it.hasNext()){
                           Integer key = (Integer) it.next();
-                          System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + carrito.get(key));
+                          System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + "\t  " + carrito.get(key));
                         }
                         
                         System.out.println("¿Desea eliminar un item del carrito? 1. Si, eliminar  2. No, finalizar compra");
@@ -177,22 +189,30 @@ public class RMIClient
                             }
                             System.out.println("Su carrito de compras es:");
                             Iterator it2 = carrito.keySet().iterator();
-                            System.out.println("Numero     Item        Precio        Cantidad");
+                            System.out.println("Numero     Item          Precio          Cantidad");
                             while(it2.hasNext()){
                               Integer key = (Integer) it2.next();
-                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + carrito.get(key));
+                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + "\t  " + carrito.get(key));
                             }
                         }
-                        Boolean check;
+                        Boolean check = false;
                         if(delete.equals("2")){
-                            check = access.check_out(carrito);
-                            if(check == true){
+                            if(access.rollbackValidation(indexTX)){
+                                access.updateTX(indexTX);
+                                check = access.check_out(carrito);
+                                System.out.println("Validación hacia atras -> TRANSACCION CONSUMADA");
+                                if(check == true){
                                 System.out.println("Compra realizada exitosamente!");
                                 System.out.println("Ha sido regresado al menu...");
                                 shopping(access);
+                                }
+                                else{
+                                    System.out.println("Ha ocurrido un error");
+                                }
                             }
                             else{
-                                System.out.println("Error, ya no hay unidades suficientes");
+                                access.updateTX(indexTX);
+                                System.out.println("Validación hacia atras -> TRANSACCION ABORTADA");
                                 System.out.println("Ha sido regresado al menu...");
                                 shopping(access);
                             }

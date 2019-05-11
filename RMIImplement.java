@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.*; 
 import java.rmi.server.*; 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -63,6 +64,8 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
         String[] cards = leerArchivo("cards.txt");
         List users = leerArchivo_list("users.txt");
         Map<String, String> card_value = new HashMap<String, String>();
+        List<List<String>> TX = new ArrayList<List<String>>();
+        int indexTX_user = 0;
         
 
 	// Implementation of the query interface 
@@ -109,6 +112,20 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
                 }
 
 		return card_value; 
+	}
+        
+        @Override
+        public int get_indexTX() 
+					throws RemoteException 
+	{                
+		return indexTX_user; 
+	}
+        
+        @Override
+        public void set_indexTX() 
+					throws RemoteException 
+	{                
+		indexTX_user++; 
 	}
         
         @Override
@@ -237,6 +254,60 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
             else{
                 return false;
             }
+        }
+        
+        @Override
+        public void create_transaction(int index, List<String> TX_i){
+            
+            TX.add(index, TX_i);
+            
+        }
+        
+        @Override
+        public void add_operation(int index, String operation){
+            
+            TX.get(index).add(operation);
+            
+        }
+        
+        @Override
+        public boolean rollbackValidation(int index){
+            for(List<String> l : TX){
+                for(String s : l){
+                    System.out.println(s);
+                }
+                System.out.println("----------------------------------");
+            }
+            boolean valid = true;
+            if(index == 0){
+                return valid;
+            }
+            else{
+                List<String> txs, current;
+                current = TX.get(index);
+                int count = index - 1;
+                System.out.println("current->" + index);
+                //for(int i=index-1; i<1; i=i-1){
+                while(count >= 0){
+                    System.out.println("i->" + count);
+                    txs = TX.get(count);
+                    for(String c : current){
+                        for(String tx : txs){
+                            if(tx.equals(c)){
+                                valid = false;
+                                return valid;
+                            }
+                        }
+                    }
+                    count = count - 1;
+                }
+                return valid;   
+            }
+        }
+        
+        @Override
+        public void updateTX(int index){
+            TX.get(index).clear();
         }
 
 } 
