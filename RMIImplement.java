@@ -17,7 +17,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.*; 
 import java.rmi.server.*; 
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -25,6 +28,10 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 public class RMIImplement extends UnicastRemoteObject implements RMIInterface 
 { 
 	// Default constructor to throw RemoteException 
@@ -172,18 +179,67 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
             return true;            
         }
         
+        public byte[] encrypt(String message) throws Exception {
+            final MessageDigest md = MessageDigest.getInstance("md5");
+            final byte[] digestOfPassword = md.digest("HG58YZ3CR9"
+                    .getBytes("utf-8"));
+            final byte[] keyBytes = Arrays.copyOf(digestOfPassword, 24);
+            for (int j = 0, k = 16; j < 8;) {
+                keyBytes[k++] = keyBytes[j++];
+            }
+
+            final SecretKey key = new SecretKeySpec(keyBytes, "DESede");
+            final IvParameterSpec iv = new IvParameterSpec(new byte[8]);
+            final Cipher cipher = Cipher.getInstance("DESede/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+
+            final byte[] plainTextBytes = message.getBytes("utf-8");
+            final byte[] cipherText = cipher.doFinal(plainTextBytes);
+            // final String encodedCipherText = new sun.misc.BASE64Encoder()
+            // .encode(cipherText);
+
+            return cipherText;
+        }
+        
+        public String decrypt(byte[] message) throws Exception {
+            final MessageDigest md = MessageDigest.getInstance("md5");
+            final byte[] digestOfPassword = md.digest("HG58YZ3CR9"
+                    .getBytes("utf-8"));
+            final byte[] keyBytes = Arrays.copyOf(digestOfPassword, 24);
+            for (int j = 0, k = 16; j < 8;) {
+                keyBytes[k++] = keyBytes[j++];
+            }
+
+            final SecretKey key = new SecretKeySpec(keyBytes, "DESede");
+            final IvParameterSpec iv = new IvParameterSpec(new byte[8]);
+            final Cipher decipher = Cipher.getInstance("DESede/CBC/PKCS5Padding");
+            decipher.init(Cipher.DECRYPT_MODE, key, iv);
+
+            // final byte[] encData = new
+            // sun.misc.BASE64Decoder().decodeBuffer(message);
+            final byte[] plainText = decipher.doFinal(message);
+
+            return new String(plainText, "UTF-8");
+        }
+        
         @Override
         public Boolean register(String username, String hash){
-
+            byte[] codedtext = null;
+            try {
+                codedtext = encrypt(username);
+            } catch (Exception ex) {
+                Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            String username_str = Base64.getEncoder().encodeToString(codedtext);
             FileWriter fw = null;
             try {
                 fw = new FileWriter("users.txt", true);
             } catch (IOException ex) {
                 Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
             }
-            String to_write = username + "," + hash;
+            String to_write = username_str + "," + hash;
             try {
-                fw.write(to_write);
+                fw.write(to_write);     
                 fw.write("\r\n");
                 users.add(to_write);
                 for(int i = 0; i < users.size(); i++) {
@@ -231,10 +287,18 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
                           System.out.println(key +"\t  " + users_map.get(key));
                         }
                 
+            String decodedtext = null;
             Iterator it = users_map.keySet().iterator();
             while(it.hasNext()){
                 String key = (String) it.next();
-                if(key.equals(username) && users_map.get(key).equals(hash)){
+
+                byte[] bytes = Base64.getDecoder().decode(key);
+                try {
+                    decodedtext = decrypt(bytes);
+                } catch (Exception ex) {
+                    Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                if(decodedtext.equals(username) && users_map.get(key).equals(hash)){
                     System.out.println("IGUALES TRUE user!");
                     user_flag = true;
                 }
