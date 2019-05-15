@@ -63,10 +63,11 @@ public class RMIClient
                         answer = access.register(username, hash);
                         if(answer == true){
                             System.out.println("Registrado exitosamente");
-                            shopping(access);
+                            init(access);
                         }
                         else{
                             System.out.println("Error al registrarse");
+                            init(access);
                         }
                         
                     }
@@ -89,7 +90,7 @@ public class RMIClient
                         answer = access.login(username, hash, card);
                         if(answer == true){
                             System.out.println("Bienvenido");
-                            shopping(access);
+                            shopping(access, card);
                         }
                         if(answer == false){
                             System.out.println("Error algunos datos no son correctos");
@@ -107,7 +108,7 @@ public class RMIClient
                 //}
             }
         }
-        private static void shopping(RMIInterface access) throws RemoteException{
+        private static void shopping(RMIInterface access, String card) throws RemoteException{
             String[] items, prices, quantity;
             int indexTX;
             Map<Integer, String> carrito = new HashMap<Integer, String>();
@@ -199,22 +200,24 @@ public class RMIClient
                         if(delete.equals("2")){
                             if(access.rollbackValidation(indexTX)){
                                 access.commitTX(indexTX);
-                                check = access.check_out(carrito);
-                                System.out.println("Validación hacia atras -> TRANSACCION CONSUMADA");
+                                check = access.check_out(carrito, card);
+                                System.out.println("Validación hacia atras -> EXITOSA");
                                 if(check == true){
                                 System.out.println("Compra realizada exitosamente!");
                                 System.out.println("Ha sido regresado al menu...");
-                                shopping(access);
+                                shopping(access, card);
                                 }
                                 else{
-                                    System.out.println("Ha ocurrido un error");
+                                    System.out.println("No tiene dinero suficiente en la tarjeta...");
+                                    System.out.println("Ha sido regresado al menu...");
+                                    shopping(access, card);
                                 }
                             }
                             else{
                                 access.commitTX(indexTX);
-                                System.out.println("Validación hacia atras -> TRANSACCION ABORTADA");
+                                System.out.println("Validación hacia atras -> ABORTADA");
                                 System.out.println("Ha sido regresado al menu...");
-                                shopping(access);
+                                shopping(access, card);
                             }
                         }
                     }

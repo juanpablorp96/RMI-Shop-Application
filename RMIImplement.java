@@ -113,7 +113,11 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
                         cadena = cadena + cards[i];
                     }
                 }
+                System.out.println(cadena);   
                 String[] values = cadena.split(",");
+                for(String v : values){
+                    System.out.println(v);  
+                }
                 for(int i=0; i<(cards.length * 2); i+=2){
                     card_value.put(values[i], values[i+1]);
                 }
@@ -136,47 +140,74 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
 	}
         
         @Override
-        public Boolean check_out(Map<Integer, String> carrito){
-            Map<Integer, String> car = new HashMap<Integer, String>();
-            int new_quantity;
-            car = carrito;
+        public Boolean check_out(Map<Integer, String> carrito, String card) throws RemoteException{
+            Map<String, String> cards = get_cards();
+            int moneyInCard = 0, new_quantity, total_price = 0;
             
-            Iterator it = carrito.keySet().iterator();
-            System.out.println("Numero     Item        Precio        Cantidad");
-            while(it.hasNext()){
-                Integer key = (Integer) it.next();
-                new_quantity = (Integer.parseInt(quantity[key - 1]) - Integer.parseInt(car.get(key)));
-                if(new_quantity >= 0){
-                    quantity[key - 1] = Integer.toString(new_quantity);
-                    FileWriter fw = null;
-                    try {
-                        fw = new FileWriter("quantity.txt");
-                    } catch (IOException ex) {
-                        Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    //String to_write = username + "," + hash;
-                    try {
-                        for(String q : quantity){
-                            fw.write(q);
-                            fw.write("\r\n");
-                        }
-
-                    } catch (IOException ex) {
-                        Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
-                    try {
-                        fw.close();
-                    } catch (IOException ex) {
-                        Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                else{
-                    return false;
+            System.out.println("flag 1");   
+            
+            // using for-each loop for iteration over Map.entrySet() 
+            for (Map.Entry<String,String> entry : cards.entrySet())  
+            System.out.println("Key = " + entry.getKey() + 
+                             ", Value = " + entry.getValue());
+            
+            System.out.println("flag 2");
+            
+            for (Map.Entry<String,String> c : cards.entrySet()){
+                if(c.getKey().equals(card)){
+                    moneyInCard = Integer.parseInt(c.getValue());
                 }
             }
             
-            return true;            
+            System.out.println("flag 3");
+            
+            for (Map.Entry<Integer,String> c : carrito.entrySet()){
+                total_price += Integer.parseInt(prices[c.getKey() - 1]) * Integer.parseInt(c.getValue());
+            }
+            
+            System.out.println("flag 4");
+            
+            if(moneyInCard - total_price >= 0){
+                
+                Iterator it3 = carrito.keySet().iterator();
+                while(it3.hasNext()){
+                    Integer key3 = (Integer) it3.next();
+                    new_quantity = (Integer.parseInt(quantity[key3 - 1]) - Integer.parseInt(carrito.get(key3)));
+                    if(new_quantity >= 0){
+                        quantity[key3 - 1] = Integer.toString(new_quantity);
+                        FileWriter fw = null;
+                        try {
+                            fw = new FileWriter("quantity.txt");
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        //String to_write = username + "," + hash;
+                        try {
+                            for(String q : quantity){
+                                fw.write(q);
+                                fw.write("\r\n");
+                            }
+
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+                        try {
+                            fw.close();
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    else{
+                        return false;
+                    }
+                }
+                return true;
+            }
+            else{
+                return false;
+            }
+            
         }
         
         public byte[] encrypt(String message) throws Exception {

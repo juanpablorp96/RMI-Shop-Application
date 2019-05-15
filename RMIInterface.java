@@ -19,7 +19,7 @@ public interface RMIInterface extends Remote
     public Map<String, String> get_cards() throws RemoteException;
     public int get_indexTX() throws RemoteException;
     public void set_indexTX() throws RemoteException;
-    public Boolean check_out(Map<Integer, String> carrito) throws RemoteException;
+    public Boolean check_out(Map<Integer, String> carrito, String card) throws RemoteException;
     public Boolean register(String username, String hash) throws RemoteException;
     public Boolean login(String username, String hash, String card) throws RemoteException;
     public void create_transaction(int index, List<String> TX_i) throws RemoteException;
