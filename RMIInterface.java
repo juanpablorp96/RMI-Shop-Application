@@ -26,5 +26,6 @@ public interface RMIInterface extends Remote
     public void add_operation(int index, String operation) throws RemoteException;
     public boolean rollbackValidation(int index) throws RemoteException;
     public void commitTX(int index) throws RemoteException;
+    public void deposit(int money, String card) throws RemoteException;
     
 }

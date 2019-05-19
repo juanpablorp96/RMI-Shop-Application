@@ -141,19 +141,18 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
         
         @Override
         public Boolean check_out(Map<Integer, String> carrito, String card) throws RemoteException{
-            Map<String, String> cards = get_cards();
             int moneyInCard = 0, new_quantity, total_price = 0;
             
             System.out.println("flag 1");   
             
             // using for-each loop for iteration over Map.entrySet() 
-            for (Map.Entry<String,String> entry : cards.entrySet())  
+            for (Map.Entry<String,String> entry : card_value.entrySet())  
             System.out.println("Key = " + entry.getKey() + 
                              ", Value = " + entry.getValue());
             
             System.out.println("flag 2");
             
-            for (Map.Entry<String,String> c : cards.entrySet()){
+            for (Map.Entry<String,String> c : card_value.entrySet()){
                 if(c.getKey().equals(card)){
                     moneyInCard = Integer.parseInt(c.getValue());
                 }
@@ -197,6 +196,37 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
                         } catch (IOException ex) {
                             Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
                         }
+                        
+                        String new_value = Integer.toString(moneyInCard - total_price);
+                        for (Map.Entry<String,String> c : card_value.entrySet()){
+                            if(c.getKey().equals(card)){
+                                c.setValue(new_value);
+                            }
+                        }
+                        FileWriter fw2 = null;
+                        try {
+                            fw2 = new FileWriter("cards.txt");
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        try {
+                            for (Map.Entry<String,String> c : card_value.entrySet()){
+                                String to_write = c.getKey() + "," + c.getValue();
+                                
+                                fw2.write(to_write);
+                                fw2.write("\r\n");
+                            }
+
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+                        try {
+                            fw2.close();
+                        } catch (IOException ex) {
+                            Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
                     }
                     else{
                         return false;
@@ -403,6 +433,39 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
         @Override
         public void commitTX(int index){
             TX.get(index).clear();
+        }
+        
+        @Override
+        public void deposit(int money, String card){
+            for (Map.Entry<String,String> c : card_value.entrySet()){
+                if(c.getKey().equals(card)){
+                    int new_value = Integer.parseInt(c.getValue()) + money;
+                    c.setValue(Integer.toString(new_value));
+                }
+            }
+            FileWriter fw = null;
+            try {
+                fw = new FileWriter("cards.txt");
+            } catch (IOException ex) {
+                Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                for (Map.Entry<String,String> c : card_value.entrySet()){
+                    String to_write = c.getKey() + "," + c.getValue();
+                                
+                    fw.write(to_write);
+                    fw.write("\r\n");
+                }
+
+            } catch (IOException ex) {
+                Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            try {
+                fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(RMIImplement.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
 } 

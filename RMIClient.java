@@ -117,6 +117,7 @@ public class RMIClient
             Scanner input = new Scanner(System.in);
             String value;
             System.out.println("1. Ver catalogo : ");
+            System.out.println("2. Recargar tarjeta : ");
 
                 //while(true){
                 
@@ -220,6 +221,14 @@ public class RMIClient
                                 shopping(access, card);
                             }
                         }
+                    }
+                    
+                    if(value.equals("2")){
+                        System.out.println("Ingrese la cantidad que desea recargar...");
+                        int money = input.nextInt();
+                        access.deposit(money, card);
+                        System.out.println("Recarga exitosa!");
+                        shopping(access, card);
                     }
             
         }
