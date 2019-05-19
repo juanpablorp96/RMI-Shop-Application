@@ -1,6 +1,10 @@
-potatoes
-tomatoes
-onions
-spanich
-cabage
-carrat
+camiseta
+tenis   
+gaseosa 
+gafas   
+televisor
+licuadora
+peluche 
+computador
+mesa    
+silla   

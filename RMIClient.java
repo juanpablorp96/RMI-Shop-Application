@@ -32,8 +32,8 @@ public class RMIClient
         }
         
         private static void init(RMIInterface access) throws RemoteException{
-            Map<String, String> cards;
-            cards = access.get_cards();
+
+            access.cards_map();
             while(true){
                 String value; 
                 Scanner input = new Scanner(System.in);
@@ -110,6 +110,7 @@ public class RMIClient
         }
         private static void shopping(RMIInterface access, String card) throws RemoteException{
             String[] items, prices, quantity;
+            Map<String, String> card_value = new HashMap<String, String>();
             int indexTX;
             Map<Integer, String> carrito = new HashMap<Integer, String>();
             List<String> TX_i = new ArrayList<String>();
@@ -163,71 +164,94 @@ public class RMIClient
                                 } 
                             }
                         }
-                        // Imprimir map
-                        System.out.println("Su carrito de compras es:");
-                        Iterator it = carrito.keySet().iterator();
-                        System.out.println("Numero     Item        Precio        Cantidad");
-                        while(it.hasNext()){
-                          Integer key = (Integer) it.next();
-                          System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + "\t  " + carrito.get(key));
-                        }
                         
-                        System.out.println("¿Desea eliminar un item del carrito? 1. Si, eliminar  2. No, finalizar compra");
-                        String delete = input.next();
                         
-                        if(delete.equals("1")){
-                            Boolean delete_next = true;
-                            while(delete_next){
-                                System.out.println("Ingrese el numero");
+                        while(true){
+                            // Imprimir map
+                            System.out.println("Su carrito de compras es:");
+                            Iterator it = carrito.keySet().iterator();
+                            System.out.println("Numero     Item        Precio        Cantidad");
+                            while(it.hasNext()){
+                              Integer key = (Integer) it.next();
+                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + "\t  " + carrito.get(key));
+                            }
+
+
+                            System.out.println("¿Desea modificar un item del carrito? 1. Si, eliminar  2. Si, cambiar cantidad 3. No, finalizar compra");
+                            String fix = input.next();
+
+                            if(fix.equals("1")){
+
+                                System.out.println("Ingrese el numero del item");
                                 Integer item_del = input.nextInt();
                                 carrito.remove(item_del);
                                 System.out.println("Elemento eliminado del carrito exitosamente");
-                                System.out.println("Desea eliminar otro item? 1. Si  2. No, finalizar compra");
-                                String continue_del = input.next();
-                                if(continue_del.equals("2")){
-                                    delete_next = false;
-                                    delete = "2";
+                            }
+
+                            if(fix.equals("2")){
+
+                                System.out.println("Ingrese el numero del item");
+                                Integer item_set = input.nextInt();
+                                System.out.println("La cantidad actual es -> " + carrito.get(item_set));
+                                
+                                
+                                Boolean fixQuantity = true;
+                                while (fixQuantity){
+                                    System.out.println("Ingrese la nueva cantidad");
+                                    String new_quantity = input.next();
+                                    if(Integer.parseInt(new_quantity) <= Integer.parseInt(quantity[item_set - 1])){
+                                        if(carrito.replace(item_set, carrito.get(item_set), new_quantity) == true){
+                                            System.out.println("Cantidad modificada exitosamente");
+                                            fixQuantity = false;
+                                        }
+                                        else{
+                                            System.out.println("Error, no se pudo hacer el cambio");
+                                        }
+                                    }
+                                    else{
+                                        System.out.println("No hay suficientes items disponibles, ingrese una cantidad inferior...");
+                                    } 
                                 }
+                                
+
                             }
-                            System.out.println("Su carrito de compras es:");
-                            Iterator it2 = carrito.keySet().iterator();
-                            System.out.println("Numero     Item          Precio          Cantidad");
-                            while(it2.hasNext()){
-                              Integer key = (Integer) it2.next();
-                              System.out.println(key +"\t  " + items[key - 1] +"\t  " + prices[key - 1] +"\t  " + "\t  " + carrito.get(key));
-                            }
-                        }
-                        Boolean check = false;
-                        if(delete.equals("2")){
-                            if(access.rollbackValidation(indexTX)){
-                                access.commitTX(indexTX);
-                                check = access.check_out(carrito, card);
-                                System.out.println("Validación hacia atras -> EXITOSA");
-                                if(check == true){
-                                System.out.println("Compra realizada exitosamente!");
-                                System.out.println("Ha sido regresado al menu...");
-                                shopping(access, card);
+
+                            Boolean check = false;
+                            if(fix.equals("3")){
+                                if(access.rollbackValidation(indexTX)){
+                                    access.commitTX(indexTX);
+                                    check = access.check_out(carrito, card);
+                                    System.out.println("Validación hacia atras -> EXITOSA");
+                                    if(check == true){
+                                    System.out.println("Compra realizada exitosamente!");
+                                    System.out.println("Ha sido regresado al menu...");
+                                    shopping(access, card);
+                                    }
+                                    else{
+                                        System.out.println("No tiene dinero suficiente en la tarjeta...");
+                                        System.out.println("Ha sido regresado al menu...");
+                                        shopping(access, card);
+                                    }
                                 }
                                 else{
-                                    System.out.println("No tiene dinero suficiente en la tarjeta...");
+                                    access.commitTX(indexTX);
+                                    System.out.println("Validación hacia atras -> ABORTADA");
                                     System.out.println("Ha sido regresado al menu...");
                                     shopping(access, card);
                                 }
-                            }
-                            else{
-                                access.commitTX(indexTX);
-                                System.out.println("Validación hacia atras -> ABORTADA");
-                                System.out.println("Ha sido regresado al menu...");
-                                shopping(access, card);
                             }
                         }
                     }
                     
                     if(value.equals("2")){
+                        card_value = access.get_cards();
+                        System.out.println("Cantidad actual -> " + card_value.get(card));
                         System.out.println("Ingrese la cantidad que desea recargar...");
                         int money = input.nextInt();
                         access.deposit(money, card);
                         System.out.println("Recarga exitosa!");
+                        card_value = access.get_cards();
+                        System.out.println("Cantidad actual -> " + card_value.get(card));
                         shopping(access, card);
                     }
             

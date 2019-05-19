@@ -16,6 +16,7 @@ public interface RMIInterface extends Remote
     public String[] get_items() throws RemoteException; 
     public String[] get_prices() throws RemoteException;
     public String[] get_quantity() throws RemoteException;
+    public void cards_map() throws RemoteException;
     public Map<String, String> get_cards() throws RemoteException;
     public int get_indexTX() throws RemoteException;
     public void set_indexTX() throws RemoteException;

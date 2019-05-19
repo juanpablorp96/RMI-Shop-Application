@@ -100,7 +100,7 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
 	}
         
         @Override
-        public Map<String, String> get_cards() 
+        public void cards_map() 
 					throws RemoteException 
 	{
                 String cadena = cards[0] + ",";
@@ -121,9 +121,15 @@ public class RMIImplement extends UnicastRemoteObject implements RMIInterface
                 for(int i=0; i<(cards.length * 2); i+=2){
                     card_value.put(values[i], values[i+1]);
                 }
-
-		return card_value; 
+ 
 	}
+        
+        @Override
+        public Map<String, String> get_cards() 
+					throws RemoteException 
+	{
+           return card_value; 
+        }
         
         @Override
         public int get_indexTX() 
